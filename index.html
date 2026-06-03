@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>爆点逃跑王 V1</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div>
+        <h1>爆点逃跑王</h1>
+        <p>倍率越高，风险越大，及时逃跑才能赢！</p>
+      </div>
+      <div class="coin-box">
+        <span>金币</span>
+        <strong id="coins">1000</strong>
+      </div>
+    </header>
+
+    <section class="game-card">
+      <div class="status" id="status">准备开始</div>
+
+      <div class="multiplier" id="multiplier">1.00x</div>
+
+      <div class="rocket-area">
+        <div class="rocket" id="rocket">🚀</div>
+        <div class="line"></div>
+      </div>
+
+      <div class="info-grid">
+        <div>
+          <span>本局下注</span>
+          <strong id="betShow">10</strong>
+        </div>
+        <div>
+          <span>预计收益</span>
+          <strong id="profitShow">0</strong>
+        </div>
+        <div>
+          <span>最高分</span>
+          <strong id="bestScore">0</strong>
+        </div>
+      </div>
+
+      <div class="bet-box">
+        <button onclick="changeBet(-10)">-10</button>
+        <input id="betInput" type="number" value="10" min="10" step="10" />
+        <button onclick="changeBet(10)">+10</button>
+      </div>
+
+      <div class="buttons">
+        <button id="startBtn" onclick="startGame()">开始游戏</button>
+        <button id="cashoutBtn" onclick="cashOut()" disabled>立即逃跑</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>游戏规则</h2>
+      <ul>
+        <li>点击开始后，倍率会不断上涨。</li>
+        <li>爆点前点击“立即逃跑”，按当前倍率结算奖励。</li>
+        <li>如果还没逃跑就爆点，本局下注归零。</li>
+        <li>这只是试玩金币版本，不涉及真实充值和提现。</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>最近记录</h2>
+      <div id="history" class="history"></div>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
