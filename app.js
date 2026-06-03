@@ -1,8 +1,13 @@
+const SUPABASE_URL = "https://icnwgpukivbisxfhsxdq.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_TPzn08KiBtLXTGhfOz4gyg_YBUMECLc；”
+
+const supabaseClient = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY
+);
+
 let currentPlayer = null;
 let currentRankType = "today";
-
-let players = JSON.parse(localStorage.getItem("crash_v2_players") || "{}");
-let records = JSON.parse(localStorage.getItem("crash_v2_records") || "[]");
 
 let isPlaying = false;
 let multiplier = 1;
@@ -47,15 +52,6 @@ const adminModal = document.getElementById("adminModal");
 const adminPlayerCount = document.getElementById("adminPlayerCount");
 const adminRecordCount = document.getElementById("adminRecordCount");
 
-function saveData() {
-  localStorage.setItem("crash_v2_players", JSON.stringify(players));
-  localStorage.setItem("crash_v2_records", JSON.stringify(records));
-
-  if (currentPlayer) {
-    localStorage.setItem("crash_v2_current_player", currentPlayer.id);
-  }
-}
-
 function makePlayerId(name) {
   return "P" + btoa(unescape(encodeURIComponent(name)))
     .replace(/=/g, "")
@@ -68,7 +64,15 @@ function makeInviteCode(playerId) {
   return playerId.slice(0, 6).toUpperCase();
 }
 
-function loginPlayer() {
+function todayKey() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+async function loginPlayer() {
   const nickname = nicknameInput.value.trim();
 
   if (!nickname) {
@@ -81,24 +85,51 @@ function loginPlayer() {
     return;
   }
 
-  const id = makePlayerId(nickname);
+  const playerId = makePlayerId(nickname);
+  const inviteCode = makeInviteCode(playerId);
 
-  if (!players[id]) {
-    players[id] = {
-      id,
-      nickname,
-      coins: 1000,
-      bestScore: 0,
-      totalWin: 0,
-      totalLose: 0,
-      games: 0,
-      createdAt: Date.now()
-    };
+  const { data: oldPlayer, error: selectError } = await supabaseClient
+    .from("crash_players")
+    .select("*")
+    .eq("player_id", playerId)
+    .maybeSingle();
+
+  if (selectError) {
+    alert("连接云端失败，请检查 Supabase 配置");
+    console.error(selectError);
+    return;
   }
 
-  currentPlayer = players[id];
+  if (oldPlayer) {
+    currentPlayer = oldPlayer;
+  } else {
+    const newPlayer = {
+      player_id: playerId,
+      nickname: nickname,
+      invite_code: inviteCode,
+      coins: 1000,
+      best_score: 0,
+      total_win: 0,
+      total_lose: 0,
+      games: 0
+    };
 
-  saveData();
+    const { data, error } = await supabaseClient
+      .from("crash_players")
+      .insert(newPlayer)
+      .select()
+      .single();
+
+    if (error) {
+      alert("创建玩家失败，请检查数据表权限");
+      console.error(error);
+      return;
+    }
+
+    currentPlayer = data;
+  }
+
+  localStorage.setItem("crash_v3_current_player", currentPlayer.player_id);
   enterGame();
 }
 
@@ -109,7 +140,7 @@ function logoutPlayer() {
   }
 
   currentPlayer = null;
-  localStorage.removeItem("crash_v2_current_player");
+  localStorage.removeItem("crash_v3_current_player");
 
   loginCard.classList.remove("hidden");
   playerBar.classList.add("hidden");
@@ -121,30 +152,44 @@ function logoutPlayer() {
   updateUI();
 }
 
-function autoLogin() {
-  const savedId = localStorage.getItem("crash_v2_current_player");
+async function autoLogin() {
+  const savedId = localStorage.getItem("crash_v3_current_player");
 
-  if (savedId && players[savedId]) {
-    currentPlayer = players[savedId];
-    enterGame();
-  } else {
+  if (!savedId) {
     loginCard.classList.remove("hidden");
     playerBar.classList.add("hidden");
     tabs.classList.add("hidden");
+    return;
   }
+
+  const { data, error } = await supabaseClient
+    .from("crash_players")
+    .select("*")
+    .eq("player_id", savedId)
+    .maybeSingle();
+
+  if (error || !data) {
+    loginCard.classList.remove("hidden");
+    playerBar.classList.add("hidden");
+    tabs.classList.add("hidden");
+    return;
+  }
+
+  currentPlayer = data;
+  enterGame();
 }
 
-function enterGame() {
+async function enterGame() {
   loginCard.classList.add("hidden");
   playerBar.classList.remove("hidden");
   tabs.classList.remove("hidden");
 
   playerNameEl.textContent = currentPlayer.nickname;
-  inviteCodeEl.textContent = makeInviteCode(currentPlayer.id);
+  inviteCodeEl.textContent = currentPlayer.invite_code || makeInviteCode(currentPlayer.player_id);
 
   updateUI();
-  renderHistory();
-  renderRanking();
+  await renderHistory();
+  await renderRanking();
 }
 
 function showTab(tab) {
@@ -189,17 +234,9 @@ function switchRank(type) {
   renderRanking();
 }
 
-function todayKey() {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
 function updateUI() {
   const coins = currentPlayer ? currentPlayer.coins : 1000;
-  const best = currentPlayer ? currentPlayer.bestScore : 0;
+  const best = currentPlayer ? currentPlayer.best_score : 0;
 
   coinsEl.textContent = coins;
   betShow.textContent = currentBet;
@@ -219,6 +256,7 @@ function updateUI() {
 
 function changeBet(amount) {
   if (isPlaying) return;
+
   if (!currentPlayer) {
     alert("请先登录");
     return;
@@ -273,7 +311,35 @@ function randomBetween(min, max) {
   return Number((Math.random() * (max - min) + min).toFixed(2));
 }
 
-function startGame() {
+async function updatePlayerCloud() {
+  if (!currentPlayer) return;
+
+  currentPlayer.updated_at = new Date().toISOString();
+
+  const { error } = await supabaseClient
+    .from("crash_players")
+    .upsert(currentPlayer, {
+      onConflict: "player_id"
+    });
+
+  if (error) {
+    console.error("更新玩家失败：", error);
+    alert("云端更新失败，请检查 Supabase 权限");
+  }
+}
+
+async function saveRecordCloud(record) {
+  const { error } = await supabaseClient
+    .from("crash_records")
+    .insert(record);
+
+  if (error) {
+    console.error("保存记录失败：", error);
+    alert("保存游戏记录失败，请检查 Supabase 权限");
+  }
+}
+
+async function startGame() {
   if (!currentPlayer) {
     alert("请先登录");
     return;
@@ -307,8 +373,8 @@ function startGame() {
   cashoutBtn.disabled = false;
   betInput.disabled = true;
 
-  saveData();
   updateUI();
+  await updatePlayerCloud();
 
   timer = setInterval(() => {
     const elapsed = (Date.now() - gameStartTime) / 1000;
@@ -324,7 +390,7 @@ function startGame() {
   }, 80);
 }
 
-function cashOut() {
+async function cashOut() {
   if (!isPlaying || !currentPlayer) return;
 
   clearInterval(timer);
@@ -333,10 +399,10 @@ function cashOut() {
   const profit = reward - currentBet;
 
   currentPlayer.coins += reward;
-  currentPlayer.totalWin += Math.max(0, profit);
+  currentPlayer.total_win += Math.max(0, profit);
 
-  if (profit > currentPlayer.bestScore) {
-    currentPlayer.bestScore = profit;
+  if (profit > currentPlayer.best_score) {
+    currentPlayer.best_score = profit;
   }
 
   isPlaying = false;
@@ -348,29 +414,26 @@ function cashOut() {
   cashoutBtn.disabled = true;
   betInput.disabled = false;
 
-  records.unshift({
-    playerId: currentPlayer.id,
+  const record = {
+    player_id: currentPlayer.player_id,
     nickname: currentPlayer.nickname,
     result: "win",
-    multiplier: multiplier.toFixed(2),
+    multiplier: Number(multiplier.toFixed(2)),
     bet: currentBet,
-    reward,
-    profit,
-    date: todayKey(),
-    time: new Date().toLocaleString()
-  });
+    reward: reward,
+    profit: profit,
+    game_date: todayKey()
+  };
 
-  records = records.slice(0, 300);
+  await updatePlayerCloud();
+  await saveRecordCloud(record);
 
-  players[currentPlayer.id] = currentPlayer;
-
-  saveData();
   updateUI();
-  renderHistory();
-  renderRanking();
+  await renderHistory();
+  await renderRanking();
 }
 
-function boom() {
+async function boom() {
   if (!currentPlayer) return;
 
   clearInterval(timer);
@@ -378,7 +441,7 @@ function boom() {
   isPlaying = false;
   multiplier = crashPoint;
 
-  currentPlayer.totalLose += currentBet;
+  currentPlayer.total_lose += currentBet;
 
   multiplierEl.className = "multiplier boom";
   statusEl.textContent = `爆点了！${crashPoint.toFixed(2)}x`;
@@ -387,29 +450,26 @@ function boom() {
   cashoutBtn.disabled = true;
   betInput.disabled = false;
 
-  records.unshift({
-    playerId: currentPlayer.id,
+  const record = {
+    player_id: currentPlayer.player_id,
     nickname: currentPlayer.nickname,
     result: "lose",
-    multiplier: crashPoint.toFixed(2),
+    multiplier: Number(crashPoint.toFixed(2)),
     bet: currentBet,
     reward: 0,
     profit: -currentBet,
-    date: todayKey(),
-    time: new Date().toLocaleString()
-  });
+    game_date: todayKey()
+  };
 
-  records = records.slice(0, 300);
+  await updatePlayerCloud();
+  await saveRecordCloud(record);
 
-  players[currentPlayer.id] = currentPlayer;
-
-  saveData();
   updateUI();
-  renderHistory();
-  renderRanking();
+  await renderHistory();
+  await renderRanking();
 }
 
-function renderHistory() {
+async function renderHistory() {
   historyEl.innerHTML = "";
 
   if (!currentPlayer) {
@@ -417,24 +477,35 @@ function renderHistory() {
     return;
   }
 
-  const myRecords = records
-    .filter(item => item.playerId === currentPlayer.id)
-    .slice(0, 30);
+  const { data, error } = await supabaseClient
+    .from("crash_records")
+    .select("*")
+    .eq("player_id", currentPlayer.player_id)
+    .order("created_at", { ascending: false })
+    .limit(30);
 
-  if (myRecords.length === 0) {
+  if (error) {
+    historyEl.innerHTML = `<div class="history-item">读取记录失败</div>`;
+    console.error(error);
+    return;
+  }
+
+  if (!data || data.length === 0) {
     historyEl.innerHTML = `<div class="history-item">暂无记录</div>`;
     return;
   }
 
-  myRecords.forEach(item => {
+  data.forEach(item => {
     const div = document.createElement("div");
     div.className = "history-item";
+
+    const time = new Date(item.created_at).toLocaleString();
 
     if (item.result === "win") {
       div.innerHTML = `
         <div>
           <strong>逃跑成功 ${item.multiplier}x</strong>
-          <div class="rank-sub">${item.time}</div>
+          <div class="rank-sub">${time}</div>
         </div>
         <strong class="win-text">+${item.profit}</strong>
       `;
@@ -442,7 +513,7 @@ function renderHistory() {
       div.innerHTML = `
         <div>
           <strong>爆点 ${item.multiplier}x</strong>
-          <div class="rank-sub">${item.time}</div>
+          <div class="rank-sub">${time}</div>
         </div>
         <strong class="lose-text">-${item.bet}</strong>
       `;
@@ -452,44 +523,65 @@ function renderHistory() {
   });
 }
 
-function renderRanking() {
+async function renderRanking() {
   rankingListEl.innerHTML = "";
 
   let rankData = [];
 
   if (currentRankType === "today") {
-    const today = todayKey();
-    const todayWins = records.filter(item => item.date === today && item.result === "win");
+    const { data, error } = await supabaseClient
+      .from("crash_records")
+      .select("player_id,nickname,profit,game_date,result")
+      .eq("game_date", todayKey())
+      .eq("result", "win")
+      .order("profit", { ascending: false })
+      .limit(100);
+
+    if (error) {
+      rankingListEl.innerHTML = `<div class="history-item">读取排行榜失败</div>`;
+      console.error(error);
+      return;
+    }
 
     const map = {};
 
-    todayWins.forEach(item => {
-      if (!map[item.playerId]) {
-        map[item.playerId] = {
-          playerId: item.playerId,
+    data.forEach(item => {
+      if (!map[item.player_id]) {
+        map[item.player_id] = {
+          player_id: item.player_id,
           nickname: item.nickname,
           score: 0,
           count: 0
         };
       }
 
-      if (item.profit > map[item.playerId].score) {
-        map[item.playerId].score = item.profit;
+      if (item.profit > map[item.player_id].score) {
+        map[item.player_id].score = item.profit;
       }
 
-      map[item.playerId].count += 1;
+      map[item.player_id].count += 1;
     });
 
     rankData = Object.values(map).sort((a, b) => b.score - a.score);
   } else {
-    rankData = Object.values(players)
-      .map(player => ({
-        playerId: player.id,
-        nickname: player.nickname,
-        score: player.bestScore || 0,
-        count: player.games || 0
-      }))
-      .sort((a, b) => b.score - a.score);
+    const { data, error } = await supabaseClient
+      .from("crash_players")
+      .select("player_id,nickname,best_score,games")
+      .order("best_score", { ascending: false })
+      .limit(50);
+
+    if (error) {
+      rankingListEl.innerHTML = `<div class="history-item">读取排行榜失败</div>`;
+      console.error(error);
+      return;
+    }
+
+    rankData = data.map(player => ({
+      player_id: player.player_id,
+      nickname: player.nickname,
+      score: player.best_score || 0,
+      count: player.games || 0
+    }));
   }
 
   rankData = rankData.slice(0, 20);
@@ -518,28 +610,25 @@ function renderRanking() {
   });
 }
 
-function resetMyData() {
+async function resetMyData() {
   if (!currentPlayer) return;
 
-  if (!confirm("确定重置当前玩家金币和记录吗？")) return;
-
-  records = records.filter(item => item.playerId !== currentPlayer.id);
+  if (!confirm("确定重置当前玩家金币吗？云端历史记录不会删除。")) return;
 
   currentPlayer.coins = 1000;
-  currentPlayer.bestScore = 0;
-  currentPlayer.totalWin = 0;
-  currentPlayer.totalLose = 0;
+  currentPlayer.best_score = 0;
+  currentPlayer.total_win = 0;
+  currentPlayer.total_lose = 0;
   currentPlayer.games = 0;
 
-  players[currentPlayer.id] = currentPlayer;
+  await updatePlayerCloud();
 
-  saveData();
   updateUI();
-  renderHistory();
-  renderRanking();
+  await renderHistory();
+  await renderRanking();
 }
 
-function openAdmin() {
+async function openAdmin() {
   const pwd = prompt("请输入管理员密码");
 
   if (pwd !== "888888") {
@@ -547,8 +636,16 @@ function openAdmin() {
     return;
   }
 
-  adminPlayerCount.textContent = Object.keys(players).length;
-  adminRecordCount.textContent = records.length;
+  const { count: playerCount } = await supabaseClient
+    .from("crash_players")
+    .select("*", { count: "exact", head: true });
+
+  const { count: recordCount } = await supabaseClient
+    .from("crash_records")
+    .select("*", { count: "exact", head: true });
+
+  adminPlayerCount.textContent = playerCount || 0;
+  adminRecordCount.textContent = recordCount || 0;
 
   adminModal.classList.remove("hidden");
 }
@@ -559,5 +656,3 @@ function closeAdmin() {
 
 autoLogin();
 updateUI();
-renderHistory();
-renderRanking();
