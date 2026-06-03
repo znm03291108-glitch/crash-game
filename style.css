@@ -5,44 +5,48 @@
 body {
   margin: 0;
   font-family: Arial, "Microsoft YaHei", sans-serif;
-  background: radial-gradient(circle at top, #22345f, #070b16 65%);
+  background: radial-gradient(circle at top, #22345f, #070b16 68%);
   color: #fff;
 }
 
 .app {
   width: 100%;
-  max-width: 480px;
+  max-width: 520px;
   margin: 0 auto;
   min-height: 100vh;
   padding: 16px;
 }
 
-header {
+.hidden {
+  display: none !important;
+}
+
+.top-header {
   display: flex;
   justify-content: space-between;
   gap: 12px;
   align-items: center;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
 }
 
 h1 {
   margin: 0;
-  font-size: 26px;
+  font-size: 28px;
 }
 
-header p {
+.top-header p {
   margin: 6px 0 0;
   color: #b8c3e6;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .coin-box {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.11);
   padding: 10px 14px;
-  border-radius: 14px;
+  border-radius: 16px;
   text-align: center;
-  min-width: 90px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  min-width: 94px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
 }
 
 .coin-box span {
@@ -52,8 +56,116 @@ header p {
 }
 
 .coin-box strong {
-  font-size: 20px;
+  font-size: 23px;
   color: #ffd166;
+}
+
+.login-card {
+  margin-top: 30px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.13), rgba(255,255,255,0.06));
+  border-radius: 24px;
+  padding: 24px;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.36);
+  border: 1px solid rgba(255,255,255,0.14);
+}
+
+.login-card h2 {
+  font-size: 26px;
+  margin: 0 0 8px;
+}
+
+.login-card p {
+  color: #b8c3e6;
+  margin: 0 0 18px;
+}
+
+.login-input {
+  width: 100%;
+  height: 52px;
+  border-radius: 16px;
+  border: none;
+  background: #10192f;
+  color: #fff;
+  font-size: 18px;
+  padding: 0 16px;
+  outline: none;
+  text-align: center;
+}
+
+.login-btn {
+  width: 100%;
+  height: 54px;
+  border: none;
+  border-radius: 16px;
+  margin-top: 14px;
+  background: #00c853;
+  color: #001b0c;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.login-tip {
+  color: #9eabc9;
+  font-size: 13px;
+  margin-top: 14px;
+}
+
+.player-bar {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.player-bar div {
+  background: rgba(255,255,255,0.09);
+  border-radius: 14px;
+  padding: 9px 10px;
+}
+
+.player-bar span {
+  display: block;
+  color: #b8c3e6;
+  font-size: 11px;
+}
+
+.player-bar strong {
+  display: block;
+  font-size: 15px;
+  margin-top: 2px;
+}
+
+.player-bar button {
+  height: 50px;
+  border: none;
+  border-radius: 14px;
+  background: #25345f;
+  color: #fff;
+  font-size: 14px;
+}
+
+.tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.tabs button {
+  height: 44px;
+  border: none;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.1);
+  color: #cfd8ff;
+  font-size: 15px;
+  font-weight: bold;
+}
+
+.tabs button.active {
+  background: #ffd166;
+  color: #1c1300;
 }
 
 .game-card {
@@ -75,7 +187,7 @@ header p {
 }
 
 .multiplier {
-  font-size: 68px;
+  font-size: 70px;
   font-weight: 900;
   margin: 28px 0 16px;
   color: #00ff99;
@@ -209,7 +321,7 @@ button:disabled {
 
 .panel h2 {
   margin: 0 0 10px;
-  font-size: 18px;
+  font-size: 20px;
 }
 
 .panel ul {
@@ -220,19 +332,95 @@ button:disabled {
   line-height: 1.7;
 }
 
+.panel-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.panel-title-row h2 {
+  margin: 0;
+}
+
+.panel-title-row button {
+  border: none;
+  border-radius: 12px;
+  padding: 8px 10px;
+  background: #25345f;
+  color: #fff;
+}
+
+.rank-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.rank-tabs button {
+  height: 42px;
+  border: none;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.1);
+  color: #cfd8ff;
+  font-size: 15px;
+  font-weight: bold;
+}
+
+.rank-tabs button.active {
+  background: #00c853;
+  color: #001b0c;
+}
+
+.ranking-list,
 .history {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
+.rank-item,
 .history-item {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  gap: 10px;
+  align-items: center;
   background: rgba(0,0,0,0.22);
-  padding: 10px;
-  border-radius: 12px;
+  padding: 11px;
+  border-radius: 14px;
   font-size: 14px;
+}
+
+.rank-no {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(255,255,255,0.11);
+  color: #ffd166;
+  font-weight: bold;
+}
+
+.rank-name {
+  font-weight: bold;
+}
+
+.rank-sub {
+  color: #9eabc9;
+  font-size: 12px;
+  margin-top: 3px;
+}
+
+.rank-score {
+  color: #00ff99;
+  font-weight: bold;
+}
+
+.history-item {
+  grid-template-columns: 1fr auto;
 }
 
 .win-text {
@@ -241,4 +429,81 @@ button:disabled {
 
 .lose-text {
   color: #ff6b6b;
+}
+
+.admin-entry {
+  margin: 16px 0 30px;
+  text-align: center;
+}
+
+.admin-entry button {
+  background: transparent;
+  border: none;
+  color: #6f7b9a;
+  font-size: 13px;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  z-index: 20;
+}
+
+.modal-box {
+  width: 100%;
+  max-width: 420px;
+  background: #111a31;
+  border-radius: 22px;
+  padding: 20px;
+  border: 1px solid rgba(255,255,255,0.12);
+  text-align: center;
+}
+
+.modal-box h2 {
+  margin-top: 0;
+}
+
+.modal-box p {
+  color: #b8c3e6;
+}
+
+.admin-info {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 18px 0;
+}
+
+.admin-info div {
+  background: rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.admin-info span {
+  display: block;
+  color: #b8c3e6;
+  font-size: 13px;
+}
+
+.admin-info strong {
+  display: block;
+  font-size: 24px;
+  color: #ffd166;
+  margin-top: 5px;
+}
+
+.modal-box button {
+  width: 100%;
+  height: 48px;
+  border: none;
+  border-radius: 14px;
+  background: #ffd166;
+  color: #1c1300;
+  font-size: 16px;
+  font-weight: bold;
 }
