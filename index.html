@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>爆点逃跑王 V2</title>
+  <title>爆点逃跑王 V3</title>
 
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -14,7 +14,7 @@
     <header class="top-header">
       <div>
         <h1>爆点逃跑王</h1>
-        <p>登录昵称，冲击排行榜！</p>
+        <p>云端排行榜，冲击最高分！</p>
       </div>
 
       <div class="coin-box">
@@ -32,7 +32,7 @@
       <button onclick="loginPlayer()" class="login-btn">进入游戏</button>
 
       <div class="login-tip">
-        试玩版：数据保存在当前手机浏览器中
+        V3 云端版：玩家数据和排行榜保存到 Supabase
       </div>
     </section>
 
@@ -101,7 +101,8 @@
           <li>点击开始后，倍率会不断上涨。</li>
           <li>爆点前点击“立即逃跑”，按当前倍率结算金币。</li>
           <li>没有逃跑就爆点，本局下注归零。</li>
-          <li>逃跑盈利越高，排行榜名次越高。</li>
+          <li>玩家数据和排行榜会保存到云端。</li>
+          <li>本游戏为试玩积分版，不涉及真实充值和提现。</li>
         </ul>
       </section>
     </main>
@@ -140,7 +141,7 @@
     <div id="adminModal" class="modal hidden">
       <div class="modal-box">
         <h2>管理员面板</h2>
-        <p>V2 预留入口，V3 可升级后台参数控制。</p>
+        <p>V3 云端版，可查看云端玩家数和游戏记录数。</p>
 
         <div class="admin-info">
           <div>
@@ -160,6 +161,7 @@
 
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="app.js"></script>
 </body>
 </html>
